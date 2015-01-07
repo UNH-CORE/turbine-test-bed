@@ -11,7 +11,6 @@ import daqmx
 import os
 import sys
 import json
-
 if sys.version_info[0] == 2:
     input = raw_input
 
@@ -45,7 +44,7 @@ def create_dataframe():
 
 def collect_data(phys_chan, duration):
     """Collects data from the specified channel for the duration."""
-    print("Collecting data for {} seconds".format(duration))
+    print("\nCollecting data for {} seconds".format(duration))
     c = daqmx.channels.AnalogInputBridgeChannel()
     c.physical_channel = "{}/ai{}".format(device, phys_chan)
     c.name = "volts_per_volt"
@@ -79,7 +78,7 @@ def main():
     df = create_dataframe()
     metadata = {}
     metadata["side"] = get_side()
-    metadata["physical channel"] = get_physical_channel()
+    metadata["9237 physical channel"] = get_physical_channel()
     for index, force in enumerate(df.nominal_force):
         print("\nSet the applied force to {} lbf".format(force))
         df.initial_force[index] = float(input("What is the current applied force? "))
