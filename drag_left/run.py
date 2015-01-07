@@ -9,6 +9,11 @@ from pxl import timeseries as ts
 import time
 import daqmx
 import os
+import sys
+import json
+
+if sys.version_info[0] == 2:
+    input = raw_input
 
 test_dur = 1.0    # Seconds
 max_force = 500.0  # lbf
@@ -40,7 +45,7 @@ def create_dataframe():
 
 def collect_data(phys_chan, duration):
     """Collects data from the specified channel for the duration."""
-    print("Collecting data for {} seconds...".format(duration))
+    print("Collecting data for {} seconds".format(duration))
     c = daqmx.channels.AnalogInputBridgeChannel()
     c.physical_channel = "{}/ai{}".format(device, phys_chan)
     c.name = "volts_per_volt"
@@ -60,10 +65,15 @@ def process_data():
     
 def save_raw_data(data_dict, index):
     folder = os.path.join("raw", str(index))
+    path = os.path.join(folder, "data.h5")
     if not os.path.isdir(folder):
         os.makedirs(folder)
-    ts.savehdf(os.path.join(folder, "data.h5"), data_dict)
-    print("Saved raw data")
+    ts.savehdf(path, data_dict.to_dict("list"), mode="w")
+    print("Saved raw data to", path)
+    
+def save_metadata(metadata):
+    with open("metadata.json", "w") as f:
+        json.dump(metadata, f, indent=4)
 
 def main():
     df = create_dataframe()
@@ -71,21 +81,21 @@ def main():
     metadata["side"] = get_side()
     metadata["physical channel"] = get_physical_channel()
     for index, force in enumerate(df.nominal_force):
-        print("Set the applied force to {} lbf".format(force))
-        df.initial_force[index] = float(input("What is the initial applied force? "))
+        print("\nSet the applied force to {} lbf".format(force))
+        df.initial_force[index] = float(input("What is the current applied force? "))
         rawdata = collect_data(metadata["physical channel"], test_dur)
         save_raw_data(rawdata, index)
         df.meas_volts_per_volt[index] = np.mean(rawdata["volts_per_volt"])
         print("Average measured voltage: {} V/V".format(df.meas_volts_per_volt[index]))
-        final_force = input("What is the final applied force? ")
+        final_force = input("What is the current applied force? ")
         df.final_force[index] = float(final_force)
         # Compute averages for DataFrame
-    print("Calibration complete")
+    print("\nCalibration complete")
     print("\nResults:\n")
     print(df)
-    # Write DataFrame to CSV
+    df.to_csv("processed.csv", index=False)
     # Calculate slope and add to metadata
-    # Write metadata
+    save_metadata(metadata)
 
 if __name__ == "__main__":
     main()
