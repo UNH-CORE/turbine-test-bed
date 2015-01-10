@@ -16,40 +16,32 @@ import matplotlib.pyplot as plt
 if sys.version_info[0] == 2:
     input = raw_input
 
+side = "left"
 test_dur = 1.0    # Seconds
 max_force = 500.0  # lbf
 min_force = 0.0
-steps = 2
+steps_ascending = 2
+steps_descending = 2
 device = "cDAQ1Mod2"
+phys_chan = "ai0"
 plot = True
-
-def get_side():
-    """Asks the operator to input which side is being calibrated."""
-    side = ""
-    while not side.lower() in ["left", "right"]:
-        side = input("Which side (left or right) is being calibrated? ")
-    return side.lower()
     
-def get_physical_channel():
-    """Asks the operator which physical channel the load cell is connected to."""
-    chan = ""
-    while not chan in ["0", "1", "2", "3"]:
-        chan = input("Which 9237 physical channel is the drag slide connected to? ")
-    return chan
-    
-def create_dataframe():
+def create_dataframe(direction):
     df = pd.DataFrame()
-    df["nominal_force"] = np.linspace(min_force, max_force, steps)
+    if direction == "ascending":
+        df["nominal_force"] = np.linspace(min_force, max_force, steps_ascending)
+    elif direction == "descending":
+        df["nominal_force"] = np.linspace(max_force, min_force, steps_descending)
     df["initial_force"] = np.zeros(len(df.nominal_force))
     df["final_force"] = np.zeros(len(df.nominal_force))
     df["volts_per_volt"] = np.zeros(len(df.nominal_force))
     return df
 
-def collect_data(phys_chan, duration):
+def collect_data(duration):
     """Collects data from the specified channel for the duration."""
     print("\nCollecting data for {} seconds".format(duration))
     c = daqmx.channels.AnalogInputBridgeChannel()
-    c.physical_channel = "{}/ai{}".format(device, phys_chan)
+    c.physical_channel = "{}/{}".format(device, phys_chan)
     c.name = "volts_per_volt"
     task = daqmx.tasks.Task()
     task.add_channel(c)
@@ -72,8 +64,8 @@ def regress(applied_force, volts_per_volt):
             "std_err" : std_err,
             "units" : "N/(V/V)"}
     
-def save_raw_data(data_dict, index):
-    folder = os.path.join("data", "raw", str(index))
+def save_raw_data(data_dict, index, direction):
+    folder = os.path.join("data", "raw", direction, str(index))
     path = os.path.join(folder, "data.h5")
     if not os.path.isdir(folder):
         os.makedirs(folder)
@@ -83,43 +75,59 @@ def save_raw_data(data_dict, index):
 def save_metadata(metadata):
     with open("calibration.json", "w") as f:
         json.dump(metadata, f, indent=4)
-
-def main():
-    df = create_dataframe()
-    metadata = {}
-    metadata["side"] = get_side()
-    metadata["9237 physical channel"] = get_physical_channel()
+        
+def run_cal(direction):
+    print("Running calibration", direction)
+    df = create_dataframe(direction)
     for index, force in enumerate(df.nominal_force):
         print("\nSet the applied force to {} lbf".format(force))
         initial_force = float(input("What is the current applied force? "))
         df.initial_force[index] = initial_force
-        rawdata = collect_data(metadata["9237 physical channel"], test_dur)
-        save_raw_data(rawdata, index)
+        rawdata = collect_data(test_dur)
+        save_raw_data(rawdata, index, direction)
         df.volts_per_volt[index] = np.mean(rawdata["volts_per_volt"])
         print("Average measured voltage: {} V/V".format(df.volts_per_volt[index]))
         final_force = float(input("What is the current applied force? "))
         df.final_force[index] = final_force
     df["average_force_lbf"] = (df.initial_force + df.final_force)/2
     df["average_force_newtons"] = df.average_force_lbf*4.44822162
-    print("\nCalibration complete")
+    print("\n{} calibration complete".format(direction.title()))
     print("\nResults:\n")
     print(df)
-    df.to_csv("data/processed.csv", index=False)
+    csv_folder = os.path.join("data", "processed")
+    if not os.path.isdir(csv_folder):
+        os.makedirs(csv_folder)
+    csv_path = os.path.join(csv_folder, direction + ".csv")
+    df.to_csv(csv_path, index=False)
     regression = regress(df.average_force_newtons, df.volts_per_volt)
-    print("\nRegression:")
+    print("\n{} regression:".format(direction.title()))
     for k, v in regression.items():
         print(k, ":", v)
-    metadata["linear regression"] = regression
+    return df, regression
+
+def main():
+    metadata = {}
+    metadata["side"] = side
+    metadata["9237 physical channel"] = phys_chan
+    df_asc, reg_asc = run_cal("ascending")
+    df_desc, reg_desc = run_cal("descending")
+    metadata["linear regression ascending"] = reg_asc
+    metadata["linear regression descending"] = reg_desc
+    df_all = df_asc.append(df_desc)
+    reg_all = regress(df_all.average_force_newtons, df_all.volts_per_volt)
+    metadata["linear regression all"] = reg_all
     save_metadata(metadata)
     if plot:
         plt.style.use("ggplot")
         plt.figure()
-        plt.plot(df.volts_per_volt, df.average_force_newtons, "ok", 
-                 label="Measured")
+        plt.plot(df_asc.volts_per_volt, df_asc.average_force_newtons, "ok", 
+                 label="Meas. asc.")
+        plt.plot(df_desc.volts_per_volt, df_desc.average_force_newtons, "sb", 
+                 label="Meas. desc.")
         plt.xlabel("V/V")
         plt.ylabel("Applied force (N)")
-        plt.plot(df.volts_per_volt, df.volts_per_volt*regression["slope"] \
-                 + regression["intercept"], label="Lin. reg.")
+        plt.plot(df_all.volts_per_volt, df_all.volts_per_volt*reg_all["slope"] \
+                 + reg_all["intercept"], label="Lin. reg. all")
         plt.legend(loc=2)
         plt.grid(True)
         plt.show()
