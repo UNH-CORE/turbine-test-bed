@@ -106,6 +106,7 @@ def run_cal(direction):
     return df, regression
 
 def main():
+    print("Calibrating {} drag slide\n".format(side))
     metadata = {}
     metadata["side"] = side
     metadata["9237 physical channel"] = phys_chan
@@ -116,6 +117,7 @@ def main():
     df_all = df_asc.append(df_desc)
     reg_all = regress(df_all.average_force_newtons, df_all.volts_per_volt)
     metadata["linear regression all"] = reg_all
+    metadata["timestamp"] = time.asctime()
     save_metadata(metadata)
     if plot:
         plt.style.use("ggplot")
