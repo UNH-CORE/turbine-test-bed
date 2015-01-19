@@ -2,7 +2,8 @@ UNH-CORE turbine test bed
 =========================
 
 This repository contains instrument calibrations for the UNH-CORE turbine test 
-bed. 
+bed. For documentation see the 
+[UNH OE Lab Wiki](https://marine.unh.edu/oelab/wiki).
 
 | Directory      | Instrument           | Serial No. |
 |----------------|----------------------|------------|
