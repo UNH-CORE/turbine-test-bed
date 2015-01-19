@@ -1,5 +1,5 @@
-UNH-CORE turbine test bed calibrations
-======================================
+UNH-CORE turbine test bed
+=========================
 
 This repository contains instrument calibrations for the UNH-CORE turbine test 
 bed. 
