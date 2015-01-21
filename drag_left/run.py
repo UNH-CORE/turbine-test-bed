@@ -34,7 +34,8 @@ def create_dataframe(direction):
         df["nominal_force"] = np.linspace(max_force, min_force, steps_descending)
     df["initial_force"] = np.zeros(len(df.nominal_force))
     df["final_force"] = np.zeros(len(df.nominal_force))
-    df["volts_per_volt"] = np.zeros(len(df.nominal_force))
+    df["mean_volts_per_volt"] = np.zeros(len(df.nominal_force))
+    df["std_volts_per_volt"] = np.zeros(len(df.nominal_force))
     return df
 
 def collect_data(duration):
@@ -85,12 +86,13 @@ def run_cal(direction):
         df.initial_force[index] = initial_force
         rawdata = collect_data(test_dur)
         save_raw_data(rawdata, index, direction)
-        df.volts_per_volt[index] = np.mean(rawdata["volts_per_volt"])
-        print("Average measured voltage: {} V/V".format(df.volts_per_volt[index]))
+        df.mean_volts_per_volt[index] = np.mean(rawdata["volts_per_volt"])
+        df.std_volts_per_volt[index] = np.std(rawdata["volts_per_volt"])
+        print("Mean measured voltage: {} V/V".format(df.mean_volts_per_volt[index]))
         final_force = float(input("What is the current applied force? "))
         df.final_force[index] = final_force
-    df["average_force_lbf"] = (df.initial_force + df.final_force)/2
-    df["average_force_newtons"] = df.average_force_lbf*4.44822162
+    df["mean_force_lbf"] = (df.initial_force + df.final_force)/2
+    df["mean_force_newtons"] = df.mean_force_lbf*4.44822162
     print("\n{} calibration complete".format(direction.title()))
     print("\nResults:\n")
     print(df)
@@ -99,7 +101,7 @@ def run_cal(direction):
         os.makedirs(csv_folder)
     csv_path = os.path.join(csv_folder, direction + ".csv")
     df.to_csv(csv_path, index=False)
-    regression = regress(df.average_force_newtons, df.volts_per_volt)
+    regression = regress(df.mean_force_newtons, df.mean_volts_per_volt)
     print("\n{} regression:".format(direction.title()))
     for k, v in regression.items():
         print(k, ":", v)
@@ -115,20 +117,20 @@ def main():
     metadata["linear regression ascending"] = reg_asc
     metadata["linear regression descending"] = reg_desc
     df_all = df_asc.append(df_desc)
-    reg_all = regress(df_all.average_force_newtons, df_all.volts_per_volt)
+    reg_all = regress(df_all.mean_force_newtons, df_all.mean_volts_per_volt)
     metadata["linear regression all"] = reg_all
     metadata["timestamp"] = time.asctime()
     save_metadata(metadata)
     if plot:
         plt.style.use("ggplot")
         plt.figure()
-        plt.plot(df_asc.volts_per_volt, df_asc.average_force_newtons, "ok", 
+        plt.plot(df_asc.mean_volts_per_volt, df_asc.mean_force_newtons, "ok", 
                  label="Meas. asc.")
-        plt.plot(df_desc.volts_per_volt, df_desc.average_force_newtons, "sb", 
+        plt.plot(df_desc.mean_volts_per_volt, df_desc.mean_force_newtons, "sb", 
                  label="Meas. desc.")
         plt.xlabel("V/V")
         plt.ylabel("Applied force (N)")
-        plt.plot(df_all.volts_per_volt, df_all.volts_per_volt*reg_all["slope"] \
+        plt.plot(df_all.mean_volts_per_volt, df_all.mean_volts_per_volt*reg_all["slope"] \
                  + reg_all["intercept"], label="Lin. reg. all")
         plt.legend(loc=2)
         plt.grid(True)
