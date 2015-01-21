@@ -45,6 +45,7 @@ def collect_data(duration):
     c = daqmx.channels.AnalogInputBridgeChannel()
     c.physical_channel = "{}/{}".format(device, phys_chan)
     c.name = "volts_per_volt"
+    c.voltage_exc_value = 10.0
     task = daqmx.tasks.Task()
     task.add_channel(c)
     task.sample_rate = sample_rate
