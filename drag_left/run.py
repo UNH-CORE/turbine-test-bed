@@ -18,12 +18,13 @@ if sys.version_info[0] == 2:
 
 side = "left"
 test_dur = 1.0    # Seconds
+sample_rate = 2000 # Hz
 max_force = 500.0  # lbf
 min_force = 0.0
 steps_ascending = 2
 steps_descending = 2
-device = "cDAQ1Mod2"
-phys_chan = "ai0"
+device = "cDAQ9188-16D66BBMod3"
+phys_chan = "ai1"
 plot = True
     
 def create_dataframe(direction):
@@ -46,6 +47,7 @@ def collect_data(duration):
     c.name = "volts_per_volt"
     task = daqmx.tasks.Task()
     task.add_channel(c)
+    task.sample_rate = sample_rate
     task.setup_append_data()
     task.start()
     time.sleep(duration)
