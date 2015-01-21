@@ -17,12 +17,12 @@ if sys.version_info[0] == 2:
     input = raw_input
 
 side = "left"
-test_dur = 1.0    # Seconds
+test_dur = 30.0    # Seconds
 sample_rate = 2000 # Hz
 max_force = 500.0  # lbf
 min_force = 0.0
-steps_ascending = 2
-steps_descending = 2
+steps_ascending = 10
+steps_descending = 10
 device = "cDAQ9188-16D66BBMod3"
 phys_chan = "ai1"
 plot = True
