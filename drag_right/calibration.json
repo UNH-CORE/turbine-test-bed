@@ -1,0 +1,29 @@
+{
+    "linear regression descending": {
+        "slope": 742506.98016669485, 
+        "p_value": 1.7206868654940744e-23, 
+        "r_value": 0.99999859174555716, 
+        "std_err": 440.56659921161918, 
+        "intercept": -19.02525011633611, 
+        "units": "N/(V/V)"
+    }, 
+    "timestamp": "Tue Jan 20 22:17:06 2015", 
+    "linear regression ascending": {
+        "slope": 742296.11678945378, 
+        "p_value": 8.9013054683514012e-25, 
+        "r_value": 0.99999932838714611, 
+        "std_err": 304.163370053292, 
+        "intercept": -15.086585999021281, 
+        "units": "N/(V/V)"
+    }, 
+    "9237 physical channel": "ai2", 
+    "linear regression all": {
+        "slope": 742399.89847406675, 
+        "p_value": 5.2968660972990072e-47, 
+        "r_value": 0.99999564991376, 
+        "std_err": 516.13938435432317, 
+        "intercept": -17.053370394381091, 
+        "units": "N/(V/V)"
+    }, 
+    "side": "right"
+}
