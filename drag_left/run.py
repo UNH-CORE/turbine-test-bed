@@ -50,7 +50,8 @@ def collect_data(duration):
     task.sample_rate = sample_rate
     task.setup_append_data()
     task.start()
-    time.sleep(duration)
+    while len(task.data["time"]) < duration*sample_rate:
+        time.sleep(0.2)
     task.stop()
     task.clear()
     print("Data collection complete")
