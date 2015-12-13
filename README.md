@@ -1,6 +1,7 @@
-[![Stories in Ready](https://badge.waffle.io/unh-core/turbine-test-bed.png?label=ready&title=Ready)](https://waffle.io/unh-core/turbine-test-bed)
 UNH-CORE turbine test bed
 =========================
+
+[![Stories in Ready](https://badge.waffle.io/unh-core/turbine-test-bed.png?label=ready&title=Ready)](https://waffle.io/unh-core/turbine-test-bed)
 
 This repository contains instrument calibrations for the UNH-CORE turbine test 
 bed. For documentation see the 
